@@ -8,4 +8,5 @@ class AppText
   static const String normal = "Normal";
   static const String hybrid = "Hybrid";
   static const String home = "Home";
+  static const String me = "Me";
 }

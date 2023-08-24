@@ -5,6 +5,7 @@ import 'package:flutter_map_practice/constants/app_text.dart';
 import 'package:flutter_map_practice/constants/app_url.dart';
 import 'package:flutter_map_practice/constants/appcolor.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../appbar_components/app_bar_search.dart';
@@ -27,33 +28,20 @@ class _StackCombineHomePageState extends State<StackCombineHomePage> {
       tilt: 50.0
   );
   Color backgroundColor = Colors.greenAccent;
-  void hybridOnTap()
+
+  gotoHome() async
   {
-    if(_mapType != MapType.hybrid)
-      {
-        _mapType = MapType.hybrid;
-      }
+    List<Location> locations = await locationFromAddress(AppText.homeLocationAddress);
+    GoogleMapController controller = await AppUrl.controller.future;
+    controller.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(target: LatLng(locations.last.latitude,locations.last.longitude), zoom: 18)
+    ));
   }
 
-
-  addrToLatLong() async
-  {
-      List<Location> locations = await locationFromAddress(AppText.homeLocationAddress);
-      double lat = locations.last.latitude;
-      double long = locations.last.longitude;
-      GoogleMapController controller = await AppUrl.controller.future;
-      controller.animateCamera(CameraUpdate.newCameraPosition(
-           CameraPosition(target: LatLng(lat, long), zoom: 18)
-      ));
-      setState(() {
-
-      });
-  }
-
-  latlongtoAddr() async
-  {
-    List<Placemark> placemarks = await placemarkFromCoordinates(52.2165157, 6.9437819);
-  }
+  // latlongtoAddr() async
+  // {
+  //   List<Placemark> placemarks = await placemarkFromCoordinates(52.2165157, 6.9437819);
+  // }
 
   void normalOnTap()
   {
@@ -62,19 +50,30 @@ class _StackCombineHomePageState extends State<StackCombineHomePage> {
       _mapType = MapType.normal;
     }
   }
-
-  gotoHome() async
+  void hybridOnTap()
   {
-    List<Location> locations = await locationFromAddress(AppText.homeLocationAddress);
-    GoogleMapController controller = await AppUrl.controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(
-         CameraPosition(target: LatLng(locations.last.latitude,locations.last.longitude), zoom: 18)
-    ));
-    setState(() {
-
-    });
+    if(_mapType != MapType.hybrid)
+    {
+      _mapType = MapType.hybrid;
+    }
   }
 
+  void locateMe() async
+  {
+    GoogleMapController _cont = await AppUrl.controller.future;
+    getCurrentLocation().then((value){
+      _markers.add(Marker(markerId: MarkerId("2"), infoWindow:InfoWindow(title:  "I'm here"), position: LatLng(value.latitude, value.longitude)));
+      _cont.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target:  LatLng(value.latitude, value.longitude), zoom: 18)));
+    });
+
+    setState(() {});
+  }
+
+  Future<Position> getCurrentLocation() async
+  {
+    await Geolocator.requestPermission().then((value){}).onError((error, stackTrace){ print("Error Occur");});
+    return await Geolocator.getCurrentPosition();
+  }
 
   final List<Marker> _markers = [
     const Marker(markerId: MarkerId(AppText.markId), position: LatLng(28.6061, 77.3619), infoWindow: InfoWindow(title: AppText.workLocation),),
@@ -110,11 +109,13 @@ class _StackCombineHomePageState extends State<StackCombineHomePage> {
               buttonCall(AppText.hybrid, AppColor.buttonColorHybridNormalHome, hybridOnTap),
               const SizedBox(height: 10,),
               buttonCall(AppText.home, AppColor.buttonColorHybridNormalHome, gotoHome),
+              const SizedBox(height: 10,),
+              buttonCall(AppText.me, AppColor.buttonColorHybridNormalHome, locateMe),
             ],
           ),
         ),
         Positioned(
-            top: 50,
+            top: 10,
             child: SizedBox(height:60,width:width - 20,child: const MyAppBarWithSearchLocation())),
       ],
     );
